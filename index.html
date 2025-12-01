@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login & Accounts</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .hidden { display: none; }
+    .entry { margin: 10px 0; }
+    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+  </style>
+</head>
+<body>
+
+  <!-- Login Section -->
+  <div id="login">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username"><br><br>
+    <input type="password" id="password" placeholder="Password"><br><br>
+    <button onclick="checkLogin()">Login</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
+
+  <!-- Accounting Section -->
+  <div id="account" class="hidden">
+    <h2>হিসাবের পৃষ্ঠা</h2>
+    <div class="entry">
+      <input type="text" id="company" placeholder="প্রতিষ্ঠানের নাম">
+      <input type="number" id="purchase" placeholder="মালের পরিমাণ">
+      <input type="number" id="payment" placeholder="পেমেন্ট">
+      <button onclick="addEntry()">এড করুন</button>
+    </div>
+
+    <h3>হিসাবের তালিকা</h3>
+    <table id="recordTable">
+      <tr>
+        <th>প্রতিষ্ঠান</th>
+        <th>মাল (৳)</th>
+        <th>পেমেন্ট (৳)</th>
+        <th>বাকি (৳)</th>
+      </tr>
+    </table>
+
+    <h3>মোট বাকি: <span id="totalDue">0</span> ৳</h3>
+  </div>
+
+  <script>
+    let totalDue = 0;
+
+    function checkLogin() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      if (user === "Apon" && pass === "CEO") {
+        document.getElementById("login").classList.add("hidden");
+        document.getElementById("account").classList.remove("hidden");
+      } else {
+        document.getElementById("loginError").innerText = "ভুল ইউজারনেম অথবা পাসওয়ার্ড!";
+      }
+    }
+
+    function addEntry() {
+      const name = document.getElementById("company").value;
+      const purchase = parseFloat(document.getElementById("purchase").value) || 0;
+      const payment = parseFloat(document.getElementById("payment").value) || 0;
+      const due = purchase - payment;
+
+      totalDue += due;
+
+      const table = document.getElementById("recordTable");
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>name</td>
+        <td>{purchase}</td>
+        <td>payment</td>
+        <td>{due}</td>
+      `;
+
+      document.getElementById("totalDue").innerText = totalDue;
+
+      // Clear input
+      document.getElementById("company").value = "";
+      document.getElementById("purchase").value = "";
+      document.getElementById("payment").value = "";
+    }
+  </script>
+
+</body>
+</html>
