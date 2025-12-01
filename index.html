@@ -39,7 +39,7 @@ html
         <th>পেমেন্ট (৳)</th>
         <th>বাকি (৳)</th>
       </tr>
-      </table>
+    </table>
 
     <h3>মোট বাকি: <span id="totalDue">0</span> ৳</h3>
   </div>
@@ -53,34 +53,70 @@ html
       if (user === "Apon" && pass === "CEO") {
         document.getElementById("login").classList.add("hidden");
         document.getElementById("account").classList.remove("hidden");
+        loadEntries();  // লগইন সফল হলে ডাটা লোড করো
       } else {
         document.getElementById("loginError").innerText = "ভুল ইউজারনেম অথবা পাসওয়ার্ড!";
       }
     }
 
     function addEntry() {
-      const name = document.getElementById("company").value;
+      const name = document.getElementById("company").value.trim();
       const purchase = parseFloat(document.getElementById("purchase").value) || 0;
       const payment = parseFloat(document.getElementById("payment").value) || 0;
       const due = purchase - payment;
 
+      if(name === "") {
+        alert("প্রতিষ্ঠানের নাম লিখুন");
+        return;
+      }
+
       totalDue += due;
 
+      // টেবিলে নতুন রো যুক্ত করা
       const table = document.getElementById("recordTable");
       const row = table.insertRow();
       row.innerHTML = `
         <td>name</td>
         <td>{purchase}</td>
-        <td>payment</td>
         <td>{due}</td>
       `;
 
       document.getElementById("totalDue").innerText = totalDue;
 
-      // Clear input
+      // LocalStorage এ ডাটা সেভ করা
+      let records = JSON.parse(localStorage.getItem("records")) || [];
+      records.push({name, purchase, payment, due});
+      localStorage.setItem("records", JSON.stringify(records));
+
+      // ইনপুট ফিল্ড খালি করা
       document.getElementById("company").value = "";
       document.getElementById("purchase").value = "";
       document.getElementById("payment").value = "";
+    }
+
+    function loadEntries() {
+      const records = JSON.parse(localStorage.getItem("records")) || [];
+      totalDue = 0;
+      const table = document.getElementById("recordTable");
+
+      // আগের সব রো মুছে ফেলো, শুধুমাত্র হেডার থাকবে
+      while(table.rows.length > 1) {
+        table.deleteRow(1);
+      }
+
+      // রেকর্ডস গুলো টেবিলে দেখাও
+      records.forEach(entry => {
+        totalDue += entry.due;
+        const row = table.insertRow();
+        row.innerHTML = `
+          <td>entry.name</td>
+          <td>{entry.purchase}</td>
+          <td>entry.payment</td>
+          <td>{entry.due}</td>
+        `;
+      });
+
+      document.getElementById("totalDue").innerText = totalDue;
     }
   </script>
 
