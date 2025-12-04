@@ -53,7 +53,7 @@
         button:hover {
             background-color: #3e8e41;
         }
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], input[type="password"] {
             width: 100%;
             padding: 10px;
             margin-bottom: 20px;
@@ -65,42 +65,61 @@
 <body>
     <div class="container">
         <h1>APK BY CEO APON</h1>
-        <form id="product-form">
-            <label for="product-name">পণ্যের নাম:</label>
-            <input type="text" id="product-name" name="product-name"><br><br>
-            <label for="supplier-name">সাপ্লাইয়ার নাম:</label>
-            <input type="text" id="supplier-name" name="supplier-name"><br><br>
-            <label for="product-quantity">পরিমাণ:</label>
-            <input type="number" id="product-quantity" name="product-quantity"><br><br>
-            <label for="product-price">মূল্য:</label>
-            <input type="number" id="product-price" name="product-price"><br><br>
-            <label for="payment">পেমেন্ট:</label>
-            <input type="number" id="payment" name="payment"><br><br>
-            <button id="add-product-btn">পণ্য যোগ করুন</button>
-        </form>
-        <table id="product-table">
-            <thead>
-                <tr>
-                    <th>পণ্যের নাম</th>
-                    <th>সাপ্লাইয়ার নাম</th>
-                    <th>পরিমাণ</th>
-                    <th>মূল্য</th>
-                    <th>মোট খরচ</th>
-                    <th>পেমেন্ট</th>
-                    <th>বাকি</th>
-                    <th>ক্রয় তারিখ ও সময়</th>
-                    <th>পেমেন্ট করুন</th>
-                    <th>ক্রয় করুন</th>
-                    <th>ডিলিট</th>
-                </tr>
-            </thead>
-            <tbody id="product-table-body">
-            </tbody>
-        </table>
+        <div id="login-form">
+            <label for="password">পাসওয়ার্ড:</label>
+            <input type="password" id="password" name="password">
+            <button id="login-btn">লগিন</button>
+        </div>
+        <div id="app-content" style="display: none;">
+            <form id="product-form">
+                <label for="product-name">পণ্যের নাম:</label>
+                <input type="text" id="product-name" name="product-name"><br><br>
+                <label for="supplier-name">সাপ্লাইয়ার নাম:</label>
+                <input type="text" id="supplier-name" name="supplier-name"><br><br>
+                <label for="product-quantity">পরিমাণ:</label>
+                <input type="number" id="product-quantity" name="product-quantity"><br><br>
+                <label for="product-price">মূল্য:</label>
+                <input type="number" id="product-price" name="product-price"><br><br>
+                <label for="payment">পেমেন্ট:</label>
+                <input type="number" id="payment" name="payment"><br><br>
+                <button id="add-product-btn">পণ্য যোগ করুন</button>
+            </form>
+            <table id="product-table">
+                <thead>
+                    <tr>
+                        <th>পণ্যের নাম</th>
+                        <th>সাপ্লাইয়ার নাম</th>
+                        <th>পরিমাণ</th>
+                        <th>মূল্য</th>
+                        <th>মোট খরচ</th>
+                        <th>পেমেন্ট</th>
+                        <th>বাকি</th>
+                        <th>ক্রয় তারিখ ও সময়</th>
+                        <th>পেমেন্ট করুন</th>
+                        <th>ক্রয় করুন</th>
+                        <th>ডিলিট</th>
+                    </tr>
+                </thead>
+                <tbody id="product-table-body">
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
         let products = JSON.parse(localStorage.getItem('products')) || [];
+        let password = "CEO1212";
+
+        document.getElementById('login-btn').addEventListener('click', () => {
+            let inputPassword = document.getElementById('password').value;
+            if (inputPassword === password) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+            } else {
+                alert('পাসওয়ার্ড ভুল');
+            }
+        });
+
         document.getElementById('add-product-btn').addEventListener('click', (e) => {
             e.preventDefault();
             let productName = document.getElementById('product-name').value;
@@ -183,8 +202,6 @@
             localStorage.setItem('products', JSON.stringify(products));
             displayProducts();
         }
-
-        displayProducts();
     </script>
 </body>
 </html>
