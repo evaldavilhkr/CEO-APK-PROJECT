@@ -396,7 +396,7 @@
                 let currentProduct = products[productIndex];
                 
                 let newQuantity = currentProduct.productQuantity + quantity;
-                let newTotalCost = newQuantity * currentProduct.productPrice;
+                let newTotalCost = newQuantity + currentProduct.productPrice;
                 let newDue = newTotalCost - currentProduct.payment;
                 
                 currentProduct.productQuantity = newQuantity;
