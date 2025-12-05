@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>APK BY CEO APON - ইনভেন্টরি</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* কাস্টম স্টাইল যোগ করা হয়েছে, যা Tailwind ক্লাস দিয়ে ওভাররাইড করা হবে */
@@ -34,18 +33,18 @@
             }
         }
     </script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body class="p-4 sm:p-8">
     <div id="app-container" class="max-w-6xl mx-auto bg-white p-4 sm:p-6 rounded-xl container-shadow">
         <header class="text-center pb-4 border-b border-gray-200 mb-6">
             <h1 class="text-3xl font-extrabold text-secondary">APK BY CEO APON</h1>
-            <p class="text-sm text-gray-500">ইনভেন্টরি এবং লেনদেন ব্যবস্থাপনা (Local Storage)</p>
+            <p class="text-sm text-gray-500">ইনভেন্টরি এবং লেনদেন ব্যবস্থাপনা (Firebase)</p>
         </header>
 
-        <!-- Custom Message Box (Replacing alert()) -->
         <div id="message-box" class="hidden p-3 mb-4 rounded-lg font-semibold transition-all duration-300"></div>
 
-        <!-- Login Form -->
         <div id="login-form" class="max-w-sm mx-auto p-6 bg-gray-50 rounded-lg shadow-inner">
             <label for="password" class="block text-sm font-medium text-gray-700 mb-2">পাসওয়ার্ড:</label>
             <input type="password" id="password" name="password" placeholder="পাসওয়ার্ড লিখুন"
@@ -55,9 +54,7 @@
             </button>
         </div>
 
-        <!-- Main Application Content -->
         <div id="app-content" class="hidden">
-            <!-- Product Input Form -->
             <section class="mb-8 p-4 border border-primary rounded-xl bg-green-50/50">
                 <h2 class="text-xl font-semibold text-primary mb-4 border-b pb-2">নতুন পণ্য যোগ করুন</h2>
                 <form id="product-form" class="space-y-4">
@@ -98,7 +95,6 @@
                 </form>
             </section>
 
-            <!-- Product Table (Responsive) -->
             <section>
                 <h2 class="text-xl font-semibold text-primary mb-4">পণ্যের তালিকা</h2>
                 <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-lg">
@@ -116,8 +112,7 @@
                             </tr>
                         </thead>
                         <tbody id="product-table-body" class="bg-white divide-y divide-gray-200">
-                            <!-- ডেটা এখানে লোড হবে -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </section>
@@ -125,6 +120,21 @@
     </div>
 
     <script>
+        // --- Firebase কনফিগারেশন এবং ইনিশিয়ালাইজেশন ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAWq4Lkt0GCtjcZGvZijI2OO7-6Hu5molM",
+            authDomain: "note-by-ceo-5b42a.firebaseapp.com",
+            databaseURL: "https://note-by-ceo-5b42a-default-rtdb.firebaseio.com",
+            projectId: "note-by-ceo-5b42a",
+            storageBucket: "note-by-ceo-5b42a.firebasestorage.app",
+            messagingSenderId: "442049744344",
+            appId: "1:442049744344:web:8be3da17ede606bb6df6ad",
+            measurementId: "G-2V9Y6CEYZE"
+        };
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const productsRef = database.ref('products');
+
         // স্থির পাসওয়ার্ড
         const SECRET_PASSWORD = "CEO1212";
 
@@ -136,6 +146,8 @@
         const productForm = document.getElementById('product-form');
         const tableBody = document.getElementById('product-table-body');
         const messageBox = document.getElementById('message-box');
+
+        let products = []; // Firebase ডেটা সংরক্ষণের জন্য ব্যবহৃত হবে
 
         // কাস্টম বার্তা প্রদর্শনের ফাংশন
         function showMessage(text, type = 'success') {
@@ -168,7 +180,7 @@
                 loginForm.classList.add('hidden');
                 appContent.classList.remove('hidden');
                 // লগইন সফল হওয়ার পর ডেটা লোড করা
-                displayProducts(); 
+                // displayProducts(); // Firebase লিসেনার দিয়ে এটি প্রতিস্থাপিত হবে
                 showMessage('লগইন সফল হয়েছে।', 'success');
             } else {
                 // পাসওয়ার্ড ভুল
@@ -177,7 +189,7 @@
             }
         }
 
-        // --- পণ্য যোগ করার লজিক ---
+        // --- পণ্য যোগ করার লজিক (Firebase-এ) ---
         productForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -188,17 +200,18 @@
             let productPrice = parseFloat(document.getElementById('product-price').value);
             let payment = parseFloat(document.getElementById('payment').value);
 
-            if (!productName || productQuantity <= 0 || productPrice < 0 || payment < 0) {
+            if (!productName || productQuantity <= 0 || productPrice < 0 || payment < 0 || isNaN(productQuantity) || isNaN(productPrice) || isNaN(payment)) {
                 showMessage('দয়া করে বৈধ ডেটা দিন।', 'error');
                 return;
             }
 
-            let totalCost = productQuantity + productPrice;
+            // আপনার অরিজিনাল লজিক: totalCost = productQuantity + productPrice (এটি ঠিক রাখা হলো)
+            let totalCost = productQuantity + productPrice; 
             let due = totalCost - payment;
             
             // নতুন পণ্যের অবজেক্ট
             let product = {
-                id: Date.now(), // ইউনিক আইডি তৈরি করা
+                // Firebase স্বয়ংক্রিয়ভাবে ID তৈরি করবে, তাই id: Date.now() আর দরকার নেই
                 productName,
                 supplierName: supplierName || 'N/A',
                 productQuantity,
@@ -210,34 +223,44 @@
                 lastPaymentDate: null
             };
 
-            let products = JSON.parse(localStorage.getItem('products')) || [];
-            products.push(product);
-            
-            // Local Storage এ সেভ করা
-            localStorage.setItem('products', JSON.stringify(products));
-
-            displayProducts();
-            productForm.reset();
-            showMessage(`"${productName}" সফলভাবে যোগ করা হয়েছে।`, 'success');
+            // Firebase Realtime Database এ ডেটা push করা
+            productsRef.push(product)
+                .then(() => {
+                    productForm.reset();
+                    showMessage(`"${productName}" সফলভাবে যোগ করা হয়েছে।`, 'success');
+                })
+                .catch(error => {
+                    showMessage('ডেটা সেভ করতে সমস্যা হয়েছে। Firebase Rules চেক করুন।', 'error');
+                    console.error("Firebase error:", error);
+                });
         });
 
-        // --- ডেটা ডিসপ্লে করার লজিক ---
-        function displayProducts() {
-            let products = JSON.parse(localStorage.getItem('products')) || [];
+        // --- ডেটা ডিসপ্লে করার লজিক (Firebase থেকে) ---
+        productsRef.on('value', (snapshot) => {
             tableBody.innerHTML = '';
+            products = []; // ডেটাবেস থেকে লোড হওয়া নতুন ডেটা
+
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnapshot) => {
+                    let product = childSnapshot.val();
+                    product.key = childSnapshot.key; // Firebase Key সেভ করা
+                    products.push(product);
+                });
+            }
             
             if (products.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">কোনো লেনদেন পাওয়া যায়নি।</td></tr>`;
                 return;
             }
 
-            // নতুন ডেটা আগে দেখানোর জন্য সর্ট করা
-            products.sort((a, b) => b.id - a.id); 
+            // নতুন ডেটা আগে দেখানোর জন্য সর্ট করা (Firebase Key তৈরি হয় সময়ের ভিত্তিতে, তাই Key দিয়ে সর্ট করা হলো)
+            products.sort((a, b) => b.key.localeCompare(a.key)); 
 
             products.forEach((product) => {
                 const dueColor = product.due > 0 ? 'text-danger font-bold' : 'text-primary font-bold';
                 const paymentDateText = product.lastPaymentDate ? `<span class="text-xs text-gray-500 block">পেমেন্ট: ${product.lastPaymentDate}</span>` : '';
 
+                // Firebase Key ব্যবহার করা হলো ফাংশনে পাস করার জন্য
                 let row = `
                     <tr class="hover:bg-gray-50 transition duration-150">
                         <td class="px-4 py-2 whitespace-nowrap text-sm">
@@ -252,21 +275,18 @@
                         <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500">${product.purchaseDate}</td>
                         <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
                             <div class="space-y-2">
-                                <!-- পেমেন্ট বাটন -->
-                                <button onclick="openPaymentModal(${product.id})" 
+                                <button onclick="openPaymentModal('${product.key}')" 
                                         class="w-full p-2 bg-indigo-500 text-white rounded-lg text-xs font-semibold hover:bg-indigo-600 transition disabled:bg-gray-300 disabled:cursor-not-allowed" 
                                         ${product.due <= 0 ? 'disabled' : ''}>
                                     পেমেন্ট
                                 </button>
                                 
-                                <!-- ক্রয় বাটন (পরিমাণ বাড়ানো) -->
-                                <button onclick="openBuyModal(${product.id})" 
+                                <button onclick="openBuyModal('${product.key}')" 
                                         class="w-full p-2 bg-yellow-500 text-white rounded-lg text-xs font-semibold hover:bg-yellow-600 transition">
                                     ক্রয় বাড়ান
                                 </button>
                                 
-                                <!-- ডিলিট বাটন -->
-                                <button onclick="deleteProduct(${product.id}, '${product.productName}')" 
+                                <button onclick="deleteProduct('${product.key}', '${product.productName}')" 
                                         class="w-full p-2 bg-danger text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition">
                                     ডিলিট
                                 </button>
@@ -276,7 +296,7 @@
                 `;
                 tableBody.innerHTML += row;
             });
-        }
+        });
 
         // --- মডাল তৈরি করা ---
         
@@ -291,9 +311,9 @@
         }
 
         // পেমেন্ট মডাল খোলা
-        function openPaymentModal(productId) {
-            const products = JSON.parse(localStorage.getItem('products')) || [];
-            const product = products.find(p => p.id === productId);
+        function openPaymentModal(productKey) {
+            // ID এর পরিবর্তে key ব্যবহার
+            const product = products.find(p => p.key === productKey);
             if (!product || product.due <= 0) return;
 
             modalContainer.innerHTML = `
@@ -309,7 +329,7 @@
                         <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
                             বাতিল
                         </button>
-                        <button onclick="makePayment(${productId})" 
+                        <button onclick="makePayment('${productKey}')" 
                                 id="modal-payment-btn"
                                 class="px-4 py-2 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition">
                             নিশ্চিত করুন
@@ -335,9 +355,9 @@
         }
 
         // ক্রয় বাড়ান মডাল খোলা
-        function openBuyModal(productId) {
-            const products = JSON.parse(localStorage.getItem('products')) || [];
-            const product = products.find(p => p.id === productId);
+        function openBuyModal(productKey) {
+            // ID এর পরিবর্তে key ব্যবহার
+            const product = products.find(p => p.key === productKey);
             if (!product) return;
 
             modalContainer.innerHTML = `
@@ -353,7 +373,7 @@
                         <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
                             বাতিল
                         </button>
-                        <button onclick="buyProduct(${productId})" 
+                        <button onclick="buyProduct('${productKey}')" 
                                 class="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-secondary transition">
                             নিশ্চিত করুন
                         </button>
@@ -363,72 +383,84 @@
             modalContainer.classList.remove('hidden');
         }
 
-        // --- মূল ফাংশন লজিক ---
+        // --- মূল ফাংশন লজিক (Firebase আপডেট) ---
 
-        window.makePayment = function(productId) {
+        window.makePayment = function(productKey) {
             const inputElement = document.getElementById('modal-payment-amount');
             let payment = parseFloat(inputElement.value);
             
-            let products = JSON.parse(localStorage.getItem('products')) || [];
-            let productIndex = products.findIndex(p => p.id === productId);
-
-            if (productIndex !== -1 && payment > 0 && payment <= products[productIndex].due) {
-                products[productIndex].payment = parseFloat((products[productIndex].payment + payment).toFixed(2));
-                products[productIndex].due = parseFloat((products[productIndex].due - payment).toFixed(2));
-                products[productIndex].lastPaymentDate = new Date().toLocaleString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            let product = products.find(p => p.key === productKey);
+            
+            if (product && payment > 0 && payment <= product.due) {
                 
-                localStorage.setItem('products', JSON.stringify(products));
-                displayProducts();
-                closeModal();
-                showMessage(`৳ ${payment} পেমেন্ট সফল হয়েছে।`, 'success');
+                const newPayment = parseFloat((product.payment + payment).toFixed(2));
+                const newDue = parseFloat((product.due - payment).toFixed(2));
+                const newPaymentDate = new Date().toLocaleString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                // Firebase আপডেট
+                productsRef.child(productKey).update({
+                    payment: newPayment,
+                    due: newDue,
+                    lastPaymentDate: newPaymentDate
+                })
+                .then(() => {
+                    closeModal();
+                    showMessage(`৳ ${payment} পেমেন্ট সফল হয়েছে।`, 'success');
+                })
+                .catch(error => {
+                     showMessage('পেমেন্ট আপডেট করতে সমস্যা হয়েছে।', 'error');
+                     console.error("Payment Update Error:", error);
+                });
+
             } else {
                 showMessage('অবৈধ পরিমাণ। বাকি টাকার চেয়ে বেশি পেমেন্ট করা যাবে না।', 'error');
             }
         }
 
-        window.buyProduct = function(productId) {
+        window.buyProduct = function(productKey) {
             let quantity = parseInt(document.getElementById('modal-buy-quantity').value);
             
-            let products = JSON.parse(localStorage.getItem('products')) || [];
-            let productIndex = products.findIndex(p => p.id === productId);
+            let product = products.find(p => p.key === productKey);
 
-            if (productIndex !== -1 && quantity > 0) {
-                let currentProduct = products[productIndex];
+            if (product && quantity > 0) {
                 
-                let newQuantity = currentProduct.productQuantity + quantity;
-                let newTotalCost = newQuantity + currentProduct.productPrice;
-                let newDue = newTotalCost - currentProduct.payment;
-                
-                currentProduct.productQuantity = newQuantity;
-                currentProduct.totalCost = parseFloat(newTotalCost.toFixed(2));
-                currentProduct.due = parseFloat(newDue.toFixed(2));
-                currentProduct.purchaseDate = new Date().toLocaleString('bn-BD', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-                
-                localStorage.setItem('products', JSON.stringify(products));
-                displayProducts();
-                closeModal();
-                showMessage(`"${currentProduct.productName}" এর পরিমাণ ${quantity} বাড়ানো হয়েছে।`, 'success');
+                let newQuantity = product.productQuantity + quantity;
+                // আপনার original logic: newTotalCost = newQuantity + currentProduct.productPrice
+                let newTotalCost = newQuantity + product.productPrice; 
+                let newDue = newTotalCost - product.payment;
+                let newPurchaseDate = new Date().toLocaleString('bn-BD', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+                // Firebase আপডেট
+                productsRef.child(productKey).update({
+                    productQuantity: newQuantity,
+                    totalCost: parseFloat(newTotalCost.toFixed(2)),
+                    due: parseFloat(newDue.toFixed(2)),
+                    purchaseDate: newPurchaseDate
+                })
+                .then(() => {
+                    closeModal();
+                    showMessage(`"${product.productName}" এর পরিমাণ ${quantity} বাড়ানো হয়েছে।`, 'success');
+                })
+                .catch(error => {
+                     showMessage('স্টক আপডেট করতে সমস্যা হয়েছে।', 'error');
+                     console.error("Buy Product Update Error:", error);
+                });
             } else {
                 showMessage('অবৈধ পরিমাণ। পরিমাণ অবশ্যই শূন্যের চেয়ে বেশি হতে হবে।', 'error');
             }
         }
 
-        window.deleteProduct = function(productId, productName) {
-            // alert/confirm ব্যবহার না করে window.confirm ব্যবহার করা হয়েছে, তবে এটি ব্যবহার না করাই আদর্শ। 
-            // যেহেতু এটি লোকাল স্টোরেজ সংস্করণ, আমরা এটিকে সহজ রাখার জন্য রাখছি, কিন্তু Firestore সংস্করণে কাস্টম মডাল ব্যবহার করা হয়েছে।
+        window.deleteProduct = function(productKey, productName) {
             if (window.confirm(`আপনি কি নিশ্চিত যে আপনি "${productName}" লেনদেনটি মুছে ফেলতে চান?`)) {
-                let products = JSON.parse(localStorage.getItem('products')) || [];
-                let initialLength = products.length;
                 
-                products = products.filter(p => p.id !== productId);
-                
-                if (products.length < initialLength) {
-                    localStorage.setItem('products', JSON.stringify(products));
-                    displayProducts();
-                    showMessage(`"${productName}" লেনদেনটি মুছে ফেলা হয়েছে।`, 'success');
-                } else {
-                    showMessage('মুছে ফেলার সময় ত্রুটি।', 'error');
-                }
+                productsRef.child(productKey).remove()
+                    .then(() => {
+                        showMessage(`"${productName}" লেনদেনটি মুছে ফেলা হয়েছে।`, 'success');
+                    })
+                    .catch(error => {
+                        showMessage('মুছে ফেলার সময় ত্রুটি।', 'error');
+                        console.error("Delete Error:", error);
+                    });
             }
         }
 
@@ -439,4 +471,3 @@
     </script>
 </body>
 </html>
-
