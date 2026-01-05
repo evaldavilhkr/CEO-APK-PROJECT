@@ -381,7 +381,7 @@
             let product = products.find(p => p.key === productKey);
             if (product && quantity > 0) {
                 let newQuantity = product.productQuantity + quantity;
-                let newTotalCost = newQuantity * product.productPrice; // Corrected: price * quantity
+                let newTotalCost = newQuantity + product.productPrice; // Corrected: price * quantity
                 let newDue = newTotalCost - product.payment;
                 let newPurchaseDate = new Date().toLocaleString('bn-BD');
 
