@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M/S AL-WASEE HARDWARE AND SANITARY - ইনভেন্টরি ও মেমো প্রিভিউ v5</title>
+    <title>M/S AL-WASEE HARDWARE AND SANITARY - ইনভেন্টরি ও মানি রিসিট v6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,8 +33,8 @@
         @media print {
             @page { size: auto; margin: 10mm; }
             body { background: white !important; color: black !important; }
-            #main-app, #login-screen, #invoice-modal, .no-print { display: none !important; }
-            #invoice-print-area {
+            #main-app, #login-screen, #invoice-modal, #collection-modal, .no-print { display: none !important; }
+            #invoice-print-area, #collection-print-area {
                 display: block !important;
                 width: 100% !important;
                 max-width: 100% !important;
@@ -75,7 +75,7 @@
             
             <div class="flex flex-wrap bg-black/30 p-1.5 rounded-xl border border-white/10 gap-1 justify-center">
                 <button id="tab-billing-btn" onclick="switchTab('billing')" class="px-4 py-2 rounded-lg font-bold text-sm transition bg-indigo-600 text-white shadow">
-                    মাল বিক্রি ও সার্চ
+                    商业 মাল বিক্রি ও সার্চ
                 </button>
                 <button id="tab-due-btn" onclick="switchTab('due')" class="px-4 py-2 rounded-lg font-bold text-sm transition text-gray-400 hover:text-white">
                     বাকি ও জমা খাতা
@@ -170,6 +170,7 @@
                     <div>
                         <span class="text-xs text-gray-400 block">ক্রেতার নাম ও মোবাইল</span>
                         <span id="due-card-name" class="text-base font-bold text-white block mt-0.5">-</span>
+                        <span id="due-card-phone" class="hidden"></span>
                     </div>
                     <div>
                         <span class="text-xs text-gray-400 block">বর্তমান মোট বাকি</span>
@@ -182,16 +183,14 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                         <div>
                             <label class="block text-xs text-gray-300 mb-1">জমা টাকার পরিমাণ (৳):</label>
-                            <input type="number" id="collection-amount" class="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white font-bold focus:ring-2 focus:ring-emerald-500">
+                            <input type="number" id="collection-amount" class="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         </div>
-                        <button onclick="submitDueCollection()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl font-bold shadow-lg transition">টাকা জমা করুন</button>
+                        <button onclick="submitDueCollection()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl font-bold shadow-lg transition">টাকা জমা ও ভিউ করুন</button>
                     </div>
                 </div>
             </div>
             
-            <div id="all-dues-container" class="mt-4 space-y-2 max-h-64 overflow-y-auto hidden border-t border-white/10 pt-4">
-                </div>
-            
+            <div id="all-dues-container" class="mt-4 space-y-2 max-h-64 overflow-y-auto hidden border-t border-white/10 pt-4"></div>
             <p id="due-search-error" class="text-center text-gray-500 py-6">কোনো কাস্টমার সার্চ করা হয়নি।</p>
         </div>
 
@@ -222,7 +221,7 @@
                     <input type="checkbox" id="prod-non-inv" class="mt-1 w-4 h-4 text-indigo-600 bg-white/10 border-white/20 rounded">
                     <label for="prod-non-inv" class="text-sm text-gray-300 select-none cursor-pointer">
                         <span class="font-semibold text-amber-400 block mb-0.5">নন-ইনভেন্টরি আইটেম</span>
-                        এটি টিক দিলে বিক্রির সময় মালের স্টক কমবে না (যেমন লেবার বা গাড়ি ভাড়া)।
+                        এটি টিক দিলে বিক্রির সময় মালের স্টক কমবে না。
                     </label>
                 </div>
             </div>
@@ -241,12 +240,10 @@
                     <span>রশিদ নং: #<span id="modal-inv-num" class="text-black"></span></span>
                 </div>
             </div>
-            
             <div class="mb-3 text-[11px] bg-gray-100 p-2 rounded">
-                <p class="text-gray-700"><strong>ক্রেতার নাম:</strong> <span id="modal-inv-cust-name" class="text-gray-900 font-bold ml-1"></span></p>
-                <p class="text-gray-700"><strong>মোবাইল নং:</strong> <span id="modal-inv-cust-phone" class="text-gray-900 font-bold ml-1"></span></p>
+                <p><strong>ক্রেতার নাম:</strong> <span id="modal-inv-cust-name" class="font-bold ml-1"></span></p>
+                <p><strong>মোবাইল নং:</strong> <span id="modal-inv-cust-phone" class="font-bold ml-1"></span></p>
             </div>
-            
             <div class="max-h-40 overflow-y-auto mb-3">
                 <table class="w-full text-left text-xs">
                     <thead>
@@ -259,16 +256,38 @@
                     <tbody id="modal-invoice-items-tbody" class="divide-y divide-gray-200"></tbody>
                 </table>
             </div>
-            
             <div class="text-xs space-y-1 text-right border-t border-gray-400 pt-2 font-semibold">
                 <div class="flex justify-between"><span>মোট বিল:</span> ৳<span id="modal-inv-total">0</span></div>
                 <div class="flex justify-between text-emerald-700"><span>নগদ জমা:</span> ৳<span id="modal-inv-paid">0</span></div>
                 <div class="flex justify-between text-rose-600 font-bold"><span>বাকি:</span> ৳<span id="modal-inv-due">0</span></div>
             </div>
-            
             <div class="flex gap-2 mt-5 border-t border-gray-200 pt-3 no-print">
-                <button onclick="closeInvoiceModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 rounded-xl text-xs text-center transition">বন্ধ করুন</button>
-                <button onclick="triggerPrintFromModal()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs text-center shadow-md transition">প্রিন্ট করুন</button>
+                <button onclick="closeInvoiceModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 rounded-xl text-xs transition">বন্ধ করুন</button>
+                <button onclick="triggerPrintFromModal()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition">প্রিন্ট করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="collection-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
+        <div class="bg-white text-black p-6 rounded-2xl max-w-sm w-full shadow-2xl relative border-2 border-emerald-600">
+            <div class="text-center mb-4 border-b-2 border-emerald-600 pb-2">
+                <h1 class="text-lg font-black text-emerald-900 leading-none mb-1">M/S AL-WASEE HARDWARE AND SANITARY</h1>
+                <span class="inline-block bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded mt-1">টাকা জমার রসিদ (Money Receipt)</span>
+                <div class="text-left mt-3 text-[11px] font-semibold text-gray-600">
+                    <span>তারিখ: <span id="modal-coll-date" class="text-black"></span></span>
+                </div>
+            </div>
+            <div class="mb-4 text-xs bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2">
+                <p><strong>ক্রেতার নাম:</strong> <span id="modal-coll-name" class="font-bold text-gray-900"></span></p>
+                <p><strong>মোবাইল নম্বর:</strong> <span id="modal-coll-phone" class="font-bold text-gray-900"></span></p>
+                <hr class="border-gray-300">
+                <div class="flex justify-between text-gray-700"><span>পূর্বের মোট বকেয়া বাকি:</span> <span class="font-bold">৳<span id="modal-coll-prev">0</span></span></div>
+                <div class="flex justify-between text-emerald-600 font-bold text-sm bg-emerald-50 p-1.5 rounded"><span>আজ নগদ জমা হলো:</span> <span>(-) ৳<span id="modal-coll-amt">0</span></span></div>
+                <div class="flex justify-between text-rose-600 font-extrabold text-sm border-t border-gray-300 pt-1"><span>বর্তমান অবশিষ্ট বাকি:</span> <span>৳<span id="modal-coll-current">0</span></span></div>
+            </div>
+            <div class="flex gap-2 no-print">
+                <button onclick="closeCollectionModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded-xl text-xs transition">বন্ধ করুন</button>
+                <button onclick="triggerPrintFromCollectionModal()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-xs shadow-md transition">রসিদ প্রিন্ট করুন</button>
             </div>
         </div>
     </div>
@@ -279,7 +298,7 @@
             <p class="text-[11px] font-bold text-gray-600">সব ধরণের হার্ডওয়্যার ও স্যানিটারি সামগ্রী বিক্রেতা</p>
             <div class="flex justify-between items-center mt-4 text-xs font-semibold text-gray-600">
                 <span>তারিখ: <span id="print-date"></span></span>
-                <span>রশিদ নং: #<span id="print-num"></span></span>
+                <span>রشد নং: #<span id="print-num"></span></span>
             </div>
         </div>
         <div class="mb-3 text-xs bg-gray-100 p-2 rounded">
@@ -303,6 +322,24 @@
         </div>
     </div>
 
+    <div id="collection-print-area" class="hidden bg-white text-black p-6 max-w-sm mx-auto font-sans text-center">
+        <div class="border-b-2 border-gray-800 pb-2 mb-3">
+            <h1 class="text-xl font-black text-gray-900">M/S AL-WASEE HARDWARE AND SANITARY</h1>
+            <p class="text-[10px] font-bold text-gray-600">টাকা জমার রশিদ (Money Receipt)</p>
+            <p class="text-left text-xs mt-2 text-gray-600">তারিখ: <span id="p-coll-date" class="text-black font-semibold"></span></p>
+        </div>
+        <div class="text-left text-xs space-y-1.5 border-b border-gray-300 pb-3 mb-2">
+            <p><strong>ক্রেতার নাম:</strong> <span id="p-coll-name" class="font-bold"></span></p>
+            <p><strong>মোবাইল নম্বর:</strong> <span id="p-coll-phone" class="font-bold"></span></p>
+        </div>
+        <div class="text-xs space-y-1 text-right font-semibold">
+            <div class="flex justify-between"><span>পূর্বের মোট বাকি বকেয়া:</span> ৳<span id="p-coll-prev">0</span></div>
+            <div class="flex justify-between text-emerald-700"><span>আজ নগদ জমা দিয়েছেন:</span> (-) ৳<span id="p-coll-amt">0</span></div>
+            <div class="flex justify-between text-rose-600 font-black border-t-2 border-gray-800 pt-1 text-sm"><span>বর্তমান অবশিষ্ট বাকি:</span> ৳<span id="p-coll-current">0</span></div>
+        </div>
+        <p class="text-[9px] text-gray-400 mt-6 border-t border-dashed border-gray-300 pt-2">টাকা সফলভাবে বুঝে পাওয়া গেছে। ধন্যবাদ।</p>
+    </div>
+
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyChG36JqtsoYwSj4cyDjm45ZzcD60cFolk",
@@ -319,7 +356,8 @@
         let localProductsArray = []; 
         let isShowAllActive = false;
         let activeDueCustomerDocId = null;
-        let currentModalInvoiceData = null; // প্রিন্ট ট্রিগার ট্র্যাকার
+        let currentModalInvoiceData = null;
+        let currentCollectionReceiptData = null; // মানি রিসিট ডাটা ট্র্যাকার
 
         function checkPassword() {
             const enteredPassword = document.getElementById('password-input').value;
@@ -399,8 +437,7 @@
                 tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-400 font-medium">কোনো মাল খুঁজে পাওয়া যায়নি!</td></tr>`; return;
             }
             productsList.forEach((product) => {
-                const row = document.createElement('tr');
-                row.className = "hover:bg-white/5 transition duration-150 cursor-pointer";
+                const row = document.createElement('tr'); row.className = "hover:bg-white/5 transition duration-150 cursor-pointer";
                 let stockDisplay = product.isNonInventory ? `<span class="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">Non-Inv</span>` : (product.qty <= 3 ? `<span class="font-bold text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded">${product.qty} পিস</span>` : `<span class="font-bold text-gray-200">${product.qty}</span>`);
                 
                 row.innerHTML = `
@@ -417,8 +454,7 @@
         }
 
         function toggleQtyInput(checkbox) {
-            const docId = checkbox.getAttribute('data-id');
-            const qtyInput = document.getElementById(`qty-input-${docId}`);
+            const docId = checkbox.getAttribute('data-id'); const qtyInput = document.getElementById(`qty-input-${docId}`);
             if (checkbox.checked) {
                 qtyInput.disabled = false; qtyInput.className = "sale-qty-input w-20 bg-slate-900 text-white text-center border border-emerald-500 rounded px-2 py-1";
             } else {
@@ -430,8 +466,7 @@
             const checkboxes = document.querySelectorAll('.sale-checkbox:checked');
             if (checkboxes.length === 0) { alert("বিক্রি করার জন্য প্রথমে তালিকা থেকে মাল টিক দিন।"); return; }
 
-            const batch = db.batch();
-            let totalAmount = 0; const invoiceItems = []; let stockError = false;
+            const batch = db.batch(); let totalAmount = 0; const invoiceItems = []; let stockError = false;
             
             const generatedInvoiceNum = Math.floor(100000 + Math.random() * 900000);
             const customerName = document.getElementById('cust-name').value.trim() || "সাধারণ ক্রেতা";
@@ -455,10 +490,8 @@
 
             if (stockError) return;
 
-            let finalPaid = cashPaid === null ? totalAmount : cashPaid;
-            let dueAmount = totalAmount - finalPaid;
-
-            if (dueAmount > 0 && !customerPhone) { alert("বিলটিতে বাকি রয়েছে! অবশ্যই ক্রেতার মোবাইল নম্বর দিতে হবে।"); return; }
+            let finalPaid = cashPaid === null ? totalAmount : cashPaid; let dueAmount = totalAmount - finalPaid;
+            if (dueAmount > 0 && !customerPhone) { alert("বিলটিতে বাকি রয়েছে! ক্রেতার মোবাইল নম্বর অবশ্যই দিতে হবে।"); return; }
 
             const currentDateStr = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
             const saleData = { invoiceNum: generatedInvoiceNum, customerName, customerPhone, date: currentDateStr, items: invoiceItems, total: totalAmount, paid: finalPaid, due: dueAmount };
@@ -471,10 +504,7 @@
                 }, { merge: true });
             }
 
-            batch.commit().then(() => {
-                openInvoiceModal(saleData); // সরাসরি মেমোর ইন্টারেক্টিভ প্রিভিউ ওপেন করা হচ্ছে
-                fetchProductsFromServer();
-            }).catch((err) => alert("স্টক রেকর্ড করতে সমস্যা হয়েছে।"));
+            batch.commit().then(() => { openInvoiceModal(saleData); fetchProductsFromServer(); }).catch(() => alert("রেকর্ড করতে সমস্যা হয়েছে।"));
         }
 
         function searchInvoiceAdvanced() {
@@ -493,15 +523,13 @@
                         const itemBtn = document.createElement('button');
                         itemBtn.className = "w-full text-left p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-indigo-600/30 text-xs transition flex justify-between items-center";
                         itemBtn.innerHTML = `<div><p class="font-bold text-white">#${data.invoiceNum} - ${data.customerName}</p><p class="text-[10px] text-gray-400">${data.date}</p></div><span class="text-emerald-400 font-bold">৳${data.total}</span>`;
-                        itemBtn.onclick = () => openInvoiceModal(data); // এখানেও সার্চ খতিয়ানে ক্লিক করলে প্রিভিউ ভিউ অপশন চালু হবে
-                        resultsBox.appendChild(itemBtn);
+                        itemBtn.onclick = () => openInvoiceModal(data); resultsBox.appendChild(itemBtn);
                     }
                 });
                 if (foundCount === 0) resultsBox.innerHTML = '<p class="text-xs text-rose-400 p-1">মেমো পাওয়া যায়নি!</p>';
             });
         }
 
-        // === ভিউ অপশন: পপ-আপ মডাল ওপেন লজিক ===
         function openInvoiceModal(data) {
             currentModalInvoiceData = data;
             document.getElementById('modal-inv-cust-name').innerText = data.customerName;
@@ -521,18 +549,10 @@
             document.getElementById('invoice-modal').classList.remove('hidden');
         }
 
-        function closeInvoiceModal() {
-            document.getElementById('invoice-modal').classList.add('hidden');
-            document.getElementById('cust-name').value = ''; document.getElementById('cust-phone').value = '';
-            document.getElementById('cust-paid').value = ''; document.getElementById('search-invoice-input').value = '';
-            document.getElementById('search-results-box').classList.add('hidden');
-        }
+        function closeInvoiceModal() { document.getElementById('invoice-modal').classList.add('hidden'); }
 
-        // মডাল থেকে আসল প্রিন্ট ট্রিগার করা
         function triggerPrintFromModal() {
-            if(!currentModalInvoiceData) return;
-            const data = currentModalInvoiceData;
-            
+            if(!currentModalInvoiceData) return; const data = currentModalInvoiceData;
             document.getElementById('print-cust-name').innerText = data.customerName;
             document.getElementById('print-cust-phone').innerText = data.customerPhone || "নাই";
             document.getElementById('print-date').innerText = data.date;
@@ -551,18 +571,13 @@
             document.getElementById('main-app').classList.add('hidden');
             document.getElementById('invoice-print-area').classList.remove('hidden');
             window.print();
-
-            setTimeout(() => {
-                document.getElementById('invoice-print-area').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                closeInvoiceModal();
-            }, 600);
+            setTimeout(() => { document.getElementById('invoice-print-area').classList.add('hidden'); document.getElementById('main-app').classList.remove('hidden'); closeInvoiceModal(); }, 600);
         }
 
+        // === বাকি খাতা সার্চ লজিক ===
         function searchCustomerDue() {
             const searchKey = document.getElementById('due-search-key').value.trim().toLowerCase();
-            const profileCard = document.getElementById('due-profile-card');
-            const errorText = document.getElementById('due-search-error');
+            const profileCard = document.getElementById('due-profile-card'); const errorText = document.getElementById('due-search-error');
             if(!searchKey) { alert("নাম বা মোবাইল নম্বর টাইপ করুন।"); return; }
 
             profileCard.classList.add('hidden'); document.getElementById('all-dues-container').classList.add('hidden');
@@ -574,73 +589,100 @@
                     const data = doc.data();
                     if(data.phone.includes(searchKey) || data.name.toLowerCase().includes(searchKey)) { foundDoc = data; foundDoc.id = doc.id; }
                 });
-
                 if(foundDoc) {
                     activeDueCustomerDocId = foundDoc.id;
-                    document.getElementById('due-card-name').innerText = `${foundDoc.name} (${foundDoc.phone})`;
+                    document.getElementById('due-card-name').innerText = foundDoc.name;
+                    document.getElementById('due-card-phone').innerText = foundDoc.phone;
                     document.getElementById('due-card-balance').innerText = `৳${foundDoc.totalDue}`;
                     profileCard.classList.remove('hidden'); errorText.classList.add('hidden');
                 } else { activeDueCustomerDocId = null; errorText.innerText = "দুঃখিত, কোনো হিসাব খুঁজে পাওয়া যায়নি।"; }
             });
         }
 
-        // === নতুন ফিচার: বাকির খাতার "সব বাকি দেখুন" (Show All Dues) ===
         function fetchAllDues() {
-            const container = document.getElementById('all-dues-container');
-            const errorText = document.getElementById('due-search-error');
+            const container = document.getElementById('all-dues-container'); const errorText = document.getElementById('due-search-error');
             document.getElementById('due-profile-card').classList.add('hidden');
-            
-            container.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">সব বাকির খতিয়ান লোড হচ্ছে...</p>';
-            container.classList.remove('hidden');
-            errorText.classList.add('hidden');
+            container.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">লোড হচ্ছে...</p>';
+            container.classList.remove('hidden'); errorText.classList.add('hidden');
 
             db.collection("customer_dues").get().then((querySnapshot) => {
-                container.innerHTML = '';
-                let totalDueHolders = 0;
-
+                container.innerHTML = ''; let totalDueHolders = 0;
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    // শুধু যাদের বাকি ০ টাকার বেশি তাদের দেখাবে
                     if (data.totalDue > 0) {
-                        totalDueHolders++;
-                        const dueCard = document.createElement('div');
+                        totalDueHolders++; const dueCard = document.createElement('div');
                         dueCard.className = "flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition cursor-pointer";
                         dueCard.innerHTML = `<div><p class="font-bold text-white text-sm">${data.name}</p><p class="text-xs text-gray-400">${data.phone}</p></div><span class="text-rose-400 font-extrabold text-md">৳${data.totalDue}</span>`;
-                        
-                        // কার্ডে ক্লিক করলে সরাসরি তার টাকা জমার এন্ট্রি ফর্ম ওপেন হয়ে যাবে
                         dueCard.onclick = () => {
                             activeDueCustomerDocId = doc.id;
-                            document.getElementById('due-card-name').innerText = `${data.name} (${data.phone})`;
+                            document.getElementById('due-card-name').innerText = data.name;
+                            document.getElementById('due-card-phone').innerText = data.phone;
                             document.getElementById('due-card-balance').innerText = `৳${data.totalDue}`;
-                            document.getElementById('due-profile-card').classList.remove('hidden');
-                            container.classList.add('hidden');
+                            document.getElementById('due-profile-card').classList.remove('hidden'); container.classList.add('hidden');
                         };
                         container.appendChild(dueCard);
                     }
                 });
-
-                if (totalDueHolders === 0) container.innerHTML = '<p class="text-xs text-emerald-400 text-center py-4">বর্তমানে দোকানে কারো কোনো বাকি বকেয়া নেই! খাতা পরিষ্কার।</p>';
+                if (totalDueHolders === 0) container.innerHTML = '<p class="text-xs text-emerald-400 text-center py-4">বর্তমানে দোকানে কোনো বাকি বকেয়া নেই।</p>';
             });
         }
 
+        // === নতুন ফিচার: টাকা জমা নিয়ে স্ক্রিনে রসিদ ভিউ (View) অপশন চালু করা ===
         function submitDueCollection() {
             const amountInput = parseFloat(document.getElementById('collection-amount').value);
             if(!activeDueCustomerDocId || isNaN(amountInput) || amountInput <= 0) { alert("সঠিক জমার পরিমাণ লিখুন।"); return; }
 
             const customerRef = db.collection("customer_dues").doc(activeDueCustomerDocId);
+            const customerName = document.getElementById('due-card-name').innerText;
+            const customerPhone = document.getElementById('due-card-phone').innerText;
+            const currentDateStr = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
+
             db.runTransaction((transaction) => {
                 return transaction.get(customerRef).then((sfDoc) => {
                     let currentDue = sfDoc.data().totalDue || 0;
                     if(amountInput > currentDue) { alert("বাকি টাকার চেয়ে বেশি টাকা জমা নেওয়া যাবে না!"); return; }
                     let newDue = currentDue - amountInput;
+                    
                     transaction.update(customerRef, { totalDue: newDue, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
+                    
+                    // রিসিপ্ট ট্র্যাকার ভ্যালু সেটআপ
+                    currentCollectionReceiptData = { name: customerName, phone: customerPhone, prevDue: currentDue, collectedAmt: amountInput, remainingDue: newDue, date: currentDateStr };
                     return newDue;
                 });
             }).then((newDue) => {
-                alert(`সাফল্যের সাথে ৳${amountInput} জমা নেওয়া হয়েছে!`);
                 document.getElementById('collection-amount').value = '';
                 document.getElementById('due-card-balance').innerText = `৳${newDue}`;
+                openCollectionModal(currentCollectionReceiptData); // কালেকশন সফল হলে ভিউ রসিদ মডাল ওপেন হবে
             }).catch(() => alert("টাকা জমা করতে সমস্যা হয়েছে।"));
+        }
+
+        // জমা রসিদ পপ-আপ খোলা
+        function openCollectionModal(data) {
+            document.getElementById('modal-coll-name').innerText = data.name;
+            document.getElementById('modal-coll-phone').innerText = data.phone;
+            document.getElementById('modal-coll-date').innerText = data.date;
+            document.getElementById('modal-coll-prev').innerText = data.prevDue;
+            document.getElementById('modal-coll-amt').innerText = data.collectedAmt;
+            document.getElementById('modal-coll-current').innerText = data.remainingDue;
+            document.getElementById('collection-modal').classList.remove('hidden');
+        }
+
+        function closeCollectionModal() { document.getElementById('collection-modal').classList.add('hidden'); }
+
+        // জমা রসিদ প্রিন্ট সিস্টেম ট্রিগার লজিক
+        function triggerPrintFromCollectionModal() {
+            if(!currentCollectionReceiptData) return; const data = currentCollectionReceiptData;
+            document.getElementById('p-coll-name').innerText = data.name;
+            document.getElementById('p-coll-phone').innerText = data.phone;
+            document.getElementById('p-coll-date').innerText = data.date;
+            document.getElementById('p-coll-prev').innerText = data.prevDue;
+            document.getElementById('p-coll-amt').innerText = data.collectedAmt;
+            document.getElementById('p-coll-current').innerText = data.remainingDue;
+
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('collection-print-area').classList.remove('hidden');
+            window.print();
+            setTimeout(() => { document.getElementById('collection-print-area').classList.add('hidden'); document.getElementById('main-app').classList.remove('hidden'); closeCollectionModal(); }, 600);
         }
     </script>
 </body>
